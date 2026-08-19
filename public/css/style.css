@@ -1,0 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Paleta Inspirada em Varre-Sai (Verde Café, Dourado e Neve) */
+    --primary-color: #166534; 
+    --primary-hover: #14532d;
+    --accent-color: #ca8a04; 
+    --bg-color: #f3f4f6;
+    --card-bg: #ffffff;
+    --text-main: #1f2937;
+    --text-light: #6b7280;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --success: #16a34a;
+    --border-color: #e5e7eb;
+    --radius: 12px;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; }
+.hidden { display: none !important; }
+
+/* Estrutura Principal */
+section.view { max-width: 800px; margin: 0 auto; padding: 20px; animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Cabeçalho */
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid var(--border-color); }
+header h2 { font-size: 24px; color: var(--primary-color); font-weight: 700; }
+
+/* Botões Globais */
+button { font-family: 'Inter', sans-serif; transition: var(--transition); font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary { background-color: var(--primary-color); color: #fff; border: none; padding: 12px 20px; border-radius: var(--radius); cursor: pointer; width: 100%; font-size: 16px; box-shadow: var(--shadow); }
+.btn-primary:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.btn-danger { background-color: var(--danger); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+.btn-danger:hover { background-color: var(--danger-hover); }
+.btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+.btn-outline:hover { background: var(--border-color); }
+
+/* Menus de Navegação (Tiles) */
+.menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-bottom: 30px; }
+.menu-grid button { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 15px; border-radius: var(--radius); font-weight: 600; cursor: pointer; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 14px; }
+.menu-grid button i { font-size: 24px; color: var(--primary-color); transition: var(--transition); }
+.menu-grid button:hover { border-color: var(--primary-color); color: var(--primary-color); transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+.menu-grid button:hover i { transform: scale(1.1); }
+
+/* Formulários */
+form { background: var(--card-bg); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border-color); }
+label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--text-main); }
+input[type="text"], input[type="password"], input[type="email"], input[type="date"], input[type="time"], select, textarea { width: 100%; padding: 12px 15px; margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 15px; background-color: #f9fafb; transition: var(--transition); color: var(--text-main); }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-color); background-color: #fff; box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1); }
+
+/* Listas e Cards de Informação */
+ul { list-style: none; }
+.list-item { background: var(--card-bg); padding: 20px; margin-bottom: 15px; border-radius: var(--radius); border: 1px solid var(--border-color); box-shadow: var(--shadow); transition: var(--transition); display: flex; flex-direction: column; gap: 8px; }
+.list-item:hover { box-shadow: var(--shadow-hover); border-color: #d1d5db; }
+.list-item strong { font-size: 16px; color: var(--primary-color); display: flex; align-items: center; gap: 8px; }
+.list-item .meta { font-size: 13px; color: var(--text-light); display: flex; align-items: center; gap: 6px; }
+
+/* Carteirinha Virtual - Design Especial Glassmorphism */
+.card-carteirinha { background: linear-gradient(135deg, #166534 0%, #064e3b 100%); color: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(22, 101, 52, 0.3); position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
+.card-carteirinha::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%); transform: rotate(45deg); pointer-events: none; }
+.header-card { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 2px solid rgba(255,255,255,0.5); backdrop-filter: blur(5px); }
+.card-carteirinha h3 { font-size: 22px; margin-bottom: 5px; font-weight: 600; letter-spacing: 0.5px; }
+.card-carteirinha p { font-size: 14px; opacity: 0.9; margin-bottom: 3px; }
+.card-carteirinha .cidade { margin-top: 20px; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; color: var(--accent-color); }
+.card-carteirinha .codigo { background: rgba(0,0,0,0.2); padding: 8px 15px; border-radius: 8px; display: inline-block; margin-top: 10px; font-family: monospace; font-size: 16px; letter-spacing: 1px; }
+
+/* Calendário Interativo Visual */
+.calendario-wrapper { background: var(--card-bg); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border-color); margin-bottom: 25px; }
+.calendario-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.calendario-header button { background: var(--bg-color); width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 18px; color: var(--text-main); }
+.calendario-header button:hover { background: var(--border-color); color: var(--primary-color); }
+.calendario-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center; }
+.dia-semana-label { font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; }
+.dia-calendario { width: 40px; height: 40px; line-height: 40px; margin: auto; border-radius: 50%; cursor: pointer; transition: var(--transition); font-size: 15px; font-weight: 500; color: var(--text-main); border: 2px solid transparent; }
+.dia-calendario:hover { background: var(--bg-color); border-color: var(--border-color); }
+.dia-calendario.selected { background: var(--primary-color); color: white; box-shadow: 0 4px 10px rgba(22, 101, 52, 0.3); border-color: var(--primary-color); transform: scale(1.1); }
+.dia-calendario.sem-onibus { background-color: #fef2f2; color: var(--danger); }
+.dia-calendario.sem-onibus.selected { background-color: var(--danger); color: white; box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3); border-color: var(--danger); }
+
+/* Modal Customizado (Substitui Alert/Confirm/Prompt) */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 1; transition: opacity 0.3s ease; }
+.modal-overlay.hidden { opacity: 0; pointer-events: none; }
+.modal-box { background: var(--card-bg); padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); transform: scale(1); transition: transform 0.3s ease; }
+.modal-overlay.hidden .modal-box { transform: scale(0.9); }
+.modal-icon { font-size: 48px; margin-bottom: 15px; }
+.modal-icon.info { color: var(--primary-color); }
+.modal-icon.warning { color: var(--accent-color); }
+.modal-icon.error { color: var(--danger); }
+.modal-title { font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 10px; }
+.modal-message { font-size: 15px; color: var(--text-light); margin-bottom: 25px; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+.modal-actions button { flex: 1; }
+
+/* Status Boxes e Alertas Inline */
+.status-box { padding: 20px; border-radius: var(--radius); text-align: center; margin-bottom: 20px; border: 1px solid transparent; }
+.status-box.success { background-color: #f0fdf4; border-color: #bbf7d0; color: var(--success); }
+.status-box.danger { background-color: #fef2f2; border-color: #fecaca; color: var(--danger); }
+.status-box i { font-size: 32px; margin-bottom: 10px; }
+
+/* Text Utilities */
+.text-primary { color: var(--primary-color); }
+.text-danger { color: var(--danger); }
+.text-success { color: var(--success); }
+.text-accent { color: var(--accent-color); }
