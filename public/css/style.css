@@ -1,3 +1,4 @@
+/* public/css/style.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
@@ -107,3 +108,41 @@ ul { list-style: none; }
 .text-danger { color: var(--danger); }
 .text-success { color: var(--success); }
 .text-accent { color: var(--accent-color); }
+
+/* ----------------------------------------------------
+   DECORAÇÃO TEMA VARRE-SAI (FUNDO DO LOGIN)
+---------------------------------------------------- */
+/* Usamos pointer-events: none para garantir que você consegue clicar 
+   no formulário mesmo que um ícone flutue por cima dele. */
+.decoracao-cafe {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; 
+    z-index: 1;
+    overflow: hidden;
+}
+
+/* Espalhamos os ícones pela tela com absolute e 
+   adicionamos uma animação infinita para flutuarem. */
+.decoracao-cafe i {
+    position: absolute;
+    color: var(--primary-color);
+    animation: flutuar 12s infinite alternate ease-in-out;
+}
+
+/* Aqui definimos a posição, rotação inicial, tamanho e cor de cada ícone */
+.decoracao-cafe .icon-1 { top: 15%; left: 10%; font-size: 80px; transform: rotate(15deg); opacity: 0.08; }
+.decoracao-cafe .icon-2 { top: 70%; left: 15%; font-size: 110px; color: var(--accent-color); animation-delay: 2s; transform: rotate(-25deg); opacity: 0.06; }
+.decoracao-cafe .icon-3 { top: 20%; right: 15%; font-size: 90px; animation-delay: 1s; transform: rotate(45deg); opacity: 0.05; }
+.decoracao-cafe .icon-4 { top: 60%; right: 10%; font-size: 75px; color: var(--accent-color); animation-delay: 3s; transform: rotate(-15deg); opacity: 0.07; }
+.decoracao-cafe .icon-5 { top: 85%; left: 50%; font-size: 100px; animation-delay: 4s; transform: rotate(80deg); opacity: 0.06; }
+.decoracao-cafe .icon-6 { top: 10%; left: 50%; font-size: 60px; animation-delay: 5s; transform: rotate(-40deg); opacity: 0.05; }
+
+/* Animação que faz eles subirem e girarem levemente */
+@keyframes flutuar {
+    0% { margin-top: 0; }
+    100% { margin-top: -30px; transform: rotate(10deg); }
+}

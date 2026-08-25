@@ -1,8 +1,6 @@
 // public/js/app.js
 
-// ----------------------------------------------------
-// SISTEMA DE MODAL CUSTOMIZADO
-// ----------------------------------------------------
+// Sistema de Modal Customizado
 function openModal(title, message, iconClass, iconColorClass, showCancel = false, isPrompt = false) {
     return new Promise((resolve) => {
         const overlay = document.getElementById('custom-modal');
@@ -53,9 +51,16 @@ const customConfirm = (msg, title = "Confirmação") => openModal(title, msg, "f
 const customPrompt = (msg, title = "Entrada de Dados") => openModal(title, msg, "fa-solid fa-keyboard", "info", true, true);
 
 
-// ----------------------------------------------------
-// AUTENTICAÇÃO E NAVEGAÇÃO BÁSICA
-// ----------------------------------------------------
+// Autenticação e Navegação Básica
+document.getElementById('cpf').addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, ''); 
+    if (v.length > 11) v = v.substring(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2'); 
+    v = v.replace(/(\d{3})(\d)/, '$1.$2'); 
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2'); 
+    e.target.value = v;
+});
+
 function toggleRecuperarSenha() {
     const loginForm = document.getElementById('login-form');
     const recForm = document.getElementById('recuperar-form');
@@ -91,9 +96,17 @@ document.getElementById('recuperar-form').addEventListener('submit', async (e) =
 
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const cpf = document.getElementById('cpf').value;
+    
+    const cpfComMascara = document.getElementById('cpf').value;
+    const cpfLimpo = cpfComMascara.replace(/\D/g, ''); 
     const senha = document.getElementById('senha').value;
-    const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cpf, senha }) });
+    
+    const res = await fetch('/api/login', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ cpf: cpfLimpo, senha }) 
+    });
+    
     const data = await res.json();
     if (res.ok) {
         document.getElementById('login-view').classList.add('hidden');
@@ -104,13 +117,13 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
             document.getElementById('admin-view').classList.remove('hidden'); 
             showAdminTab('calendario'); 
         }
-    } else await customError(data.erro, "Falha no Login");
+    } else {
+        await customError(data.erro, "Falha no Login");
+    }
 });
 
 
-// ----------------------------------------------------
-// PAINEL DO ALUNO
-// ----------------------------------------------------
+// Painel do Aluno
 document.getElementById('presenca-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.querySelector('input[name="tipo"]:checked').value;
@@ -133,10 +146,9 @@ async function cancelarPresencaAPI() {
 }
 
 
-// ----------------------------------------------------
-// GERENCIAMENTO DE EXCEÇÕES / FERIADOS (GLOBAIS)
-// ----------------------------------------------------
+// Gerenciamento de Exceções / Feriados (Globais)
 let diasExcecao = [];
+
 async function carregarExcecoesGlobais() {
     try {
         const res = await fetch('/api/calendario/excecoes');
@@ -168,9 +180,7 @@ async function removerFeriado() {
     }
 }
 
-// ----------------------------------------------------
-// ENGINE DO CALENDÁRIO VISUAL - ALUNO E ADMIN
-// ----------------------------------------------------
+// Engine do Calendário Visual - Aluno e Admin
 let dataRefAluno = new Date();
 let diaAtivoSemanaAluno = null;
 
@@ -186,6 +196,7 @@ async function renderizarCalendarioVisualAluno() {
     
     const primeiroDiaMes = new Date(ano, mes, 1).getDay();
     const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    
     for(let i = 0; i < primeiroDiaMes; i++) grid.innerHTML += `<div></div>`; 
     
     for(let i = 1; i <= diasNoMes; i++) {
@@ -352,16 +363,18 @@ async function carregarPresencasDaData(dataStr) {
         let html = `<div style="background: var(--primary-color); color: white; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; box-shadow: var(--shadow);"><h3 style="margin: 0; font-size: 20px;"><i class="fa-solid fa-users"></i> Embarques do Dia: ${presencas.length}</h3></div>`;
         for (const [onibus, alunos] of Object.entries(grupos)) {
             html += `<div style="background: #fff; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border-color); margin-bottom: 15px; box-shadow: var(--shadow);"><h4 style="margin-top: 0; color: var(--text-main); display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #eee; padding-bottom:10px; margin-bottom:15px;">${onibus} <span style="background: var(--primary-color); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px;"><i class="fa-solid fa-user-check"></i> ${alunos.length} Passageiros</span></h4><ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">`;
-            alunos.forEach(a => { html += `<li style="background: #f9fafb; padding: 12px; border-radius: 8px; border-left: 4px solid var(--primary-color); display: flex; justify-content: space-between; align-items: center;"><div><strong style="color:var(--text-main); display:block;">${a.nome}</strong><span style="font-size: 12px; color: var(--text-light);"><i class="fa-solid fa-hashtag"></i> ${a.matricula} &nbsp;|&nbsp; <i class="fa-solid fa-arrows-turn-to-dots"></i> ${a.tipo_presenca.replace('_', ' ')}</span></div><div style="font-size:12px; font-weight:600; color:var(--text-light);"><i class="fa-regular fa-clock"></i> ${new Date(a.data_confirmacao).toLocaleTimeString('pt-BR').substring(0,5)}</div></li>`; });
+            alunos.forEach(a => { 
+                const horaCorrigida = new Date(a.data_confirmacao + 'Z').toLocaleTimeString('pt-BR').substring(0,5);
+                html += `<li style="background: #f9fafb; padding: 12px; border-radius: 8px; border-left: 4px solid var(--primary-color); display: flex; justify-content: space-between; align-items: center;"><div><strong style="color:var(--text-main); display:block;">${a.nome}</strong><span style="font-size: 12px; color: var(--text-light);"><i class="fa-solid fa-hashtag"></i> ${a.matricula} &nbsp;|&nbsp; <i class="fa-solid fa-arrows-turn-to-dots"></i> ${a.tipo_presenca.replace('_', ' ')}</span></div><div style="font-size:12px; font-weight:600; color:var(--text-light);"><i class="fa-regular fa-clock"></i> ${horaCorrigida}</div></li>`; 
+            });
             html += `</ul></div>`;
         }
         divConteudo.innerHTML = html;
     }
 }
 
-// ----------------------------------------------------
-// DEMAIS AÇÕES DO ADMIN (ALUNOS, FROTA, AVISOS)
-// ----------------------------------------------------
+
+// Demais Ações do Admin (Alunos, Frota, Avisos)
 document.getElementById('form-cadastro-aluno').addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = { nome: document.getElementById('novo-nome').value, cpf: document.getElementById('novo-cpf').value, email: document.getElementById('novo-email').value, telefone: document.getElementById('novo-telefone').value, data_nascimento: document.getElementById('novo-nascimento').value, matricula: document.getElementById('novo-matricula').value, instituicao_ensino: document.getElementById('novo-instituicao').value };
@@ -377,7 +390,17 @@ async function buscarAlunosAPI() {
         const alunos = await res.json();
         const lista = document.getElementById('lista-gerenciamento-alunos');
         if (alunos.length === 0) return lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-magnifying-glass"></i> Nenhum aluno encontrado.</p>';
-        lista.innerHTML = alunos.map(a => `<li class="list-item" style="${a.ativo ? 'border-left: 4px solid var(--primary-color);' : 'border-left: 4px solid var(--text-light); opacity: 0.7; filter: grayscale(1);'}"><strong><i class="fa-solid fa-user"></i> ${a.nome}</strong><div class="meta"><i class="fa-solid fa-address-card"></i> CPF: ${a.cpf} &nbsp;|&nbsp; <i class="fa-solid fa-hashtag"></i> Matrícula: ${a.matricula}</div><div class="meta"><i class="fa-solid fa-phone"></i> Tel: ${a.telefone || 'N/A'}</div><div style="margin-top: 10px; display: flex; gap: 10px;"><button onclick="prepararEdicao(${a.aluno_id}, '${a.nome}', '${a.email}', '${a.matricula}', '${a.instituicao_ensino}')" class="btn-outline" style="flex:1;"><i class="fa-solid fa-pen"></i> Editar</button> ${a.ativo ? `<button onclick="excluirAlunoAPI(${a.aluno_id})" class="btn-outline" style="border-color:var(--danger); color:var(--danger); flex:1;"><i class="fa-solid fa-user-xmark"></i> Inativar</button>` : `<button onclick="reativarAlunoAPI(${a.aluno_id})" class="btn-outline" style="border-color:var(--success); color:var(--success); flex:1;"><i class="fa-solid fa-user-check"></i> Reativar</button>`}</div></li>`).join('');
+        
+        lista.innerHTML = alunos.map(a => {
+            const isAtivo = Number(a.ativo) === 1;
+
+            const btnAcao = isAtivo ? 
+                `<button onclick="excluirAlunoAPI(${a.aluno_id})" class="btn-outline" style="border-color:var(--danger); color:var(--danger); flex:1;"><i class="fa-solid fa-user-xmark"></i> Inativar</button>` 
+                : 
+                `<button onclick="reativarAlunoAPI(${a.aluno_id})" style="background-color: #28a745 !important; border: none; border-radius: 8px; color: white !important; flex:1; padding: 10px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-user-check"></i> Reativar</button>`;
+
+            return `<li class="list-item" style="${isAtivo ? 'border-left: 4px solid var(--primary-color);' : 'border-left: 4px solid var(--text-light); opacity: 0.7; filter: grayscale(1);'}"><strong><i class="fa-solid fa-user"></i> ${a.nome}</strong><div class="meta"><i class="fa-solid fa-address-card"></i> CPF: ${a.cpf} &nbsp;|&nbsp; <i class="fa-solid fa-hashtag"></i> Matrícula: ${a.matricula}</div><div class="meta"><i class="fa-solid fa-phone"></i> Tel: ${a.telefone || 'N/A'}</div><div style="margin-top: 10px; display: flex; gap: 10px;"><button onclick="prepararEdicao(${a.aluno_id}, '${a.nome}', '${a.email}', '${a.matricula}', '${a.instituicao_ensino}')" class="btn-outline" style="flex:1;"><i class="fa-solid fa-pen"></i> Editar</button> ${btnAcao}</div></li>`;
+        }).join('');
     }
 }
 
@@ -386,23 +409,74 @@ document.getElementById('form-editar-aluno').addEventListener('submit', async (e
 async function excluirAlunoAPI(id) { if(await customConfirm('Inativar o acesso deste aluno ao app?', 'Atenção')) { await fetch(`/api/admin/aluno/${id}`, { method: 'DELETE' }); buscarAlunosAPI(); } }
 async function reativarAlunoAPI(id) { if(await customConfirm('Restaurar o acesso deste aluno?', 'Atenção')) { await fetch(`/api/admin/aluno/${id}/reativar`, { method: 'PUT' }); buscarAlunosAPI(); } }
 
+
 document.getElementById('form-notificacao').addEventListener('submit', async (e) => { 
     e.preventDefault(); 
-    const dataExp = document.getElementById('aviso-data').value;
-    const horaExp = document.getElementById('aviso-hora').value;
+    
+    const expiracaoRaw = document.getElementById('aviso-expiracao').value;
+    const expiracaoFormatada = expiracaoRaw.replace('T', ' ') + ':00'; 
+
     const payload = { 
         titulo: document.getElementById('aviso-titulo').value, 
         descricao: document.getElementById('aviso-descricao').value, 
-        tempo_expiracao: `${dataExp}T${horaExp}` 
+        tempo_expiracao: expiracaoFormatada
     }; 
-    const res = await fetch('/api/admin/notificacao', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
-    const data = await res.json(); 
-    if (res.ok) { await customAlert(data.mensagem, "Enviado!"); document.getElementById('form-notificacao').reset(); carregarNotificacoesAdmin(); } 
-    else await customError(data.erro); 
+    
+    try {
+        const res = await fetch('/api/admin/notificacao', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload) 
+        }); 
+        
+        const data = await res.json(); 
+        
+        if (res.ok) { 
+            await customAlert(data.mensagem, "Enviado!"); 
+            document.getElementById('form-notificacao').reset(); 
+            carregarNotificacoesAdmin(); 
+        } else {
+            await customError(data.erro); 
+        }
+    } catch (error) {
+        console.error("Erro na requisição:", error);
+        await customError("Falha na conexão com o servidor.");
+    }
 });
 
-async function carregarNotificacoesAdmin() { const res = await fetch('/api/admin/notificacoes'); if (res.ok) { const avisos = await res.json(); const lista = document.getElementById('lista-avisos-admin'); if (avisos.length === 0) return lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-inbox"></i> Nenhum comunicado registrado.</p>'; lista.innerHTML = avisos.map(a => `<li class="list-item" style="${a.ativa ? 'border-left: 4px solid var(--accent-color);' : 'border-left: 4px solid var(--text-light); opacity: 0.6; filter: grayscale(1);'}"><strong><i class="fa-solid fa-bullhorn"></i> ${a.titulo}</strong><p style="font-size:14px; margin-top:5px; color:var(--text-main);">${a.descricao}</p><div class="meta" style="margin-top:10px;"><i class="fa-regular fa-clock"></i> Expira: ${new Date(a.tempo_expiracao).toLocaleString('pt-BR')}</div>${a.ativa ? `<button onclick="cancelarNotificacao(${a.id})" class="btn-outline" style="border-color:var(--danger); color:var(--danger); margin-top: 10px;"><i class="fa-solid fa-trash-can"></i> Retirar do Ar</button>` : ''}</li>`).join(''); } }
+
+async function carregarNotificacoesAdmin() { 
+    const res = await fetch('/api/admin/notificacoes'); 
+    if (res.ok) { 
+        const avisos = await res.json(); 
+        const lista = document.getElementById('lista-avisos-admin'); 
+        const agora = new Date(); 
+        
+        // Filtra para manter na tela APENAS os avisos que estão ativos e dentro do prazo
+        const avisosAtivos = avisos.filter(a => {
+            const dataExp = new Date(a.tempo_expiracao.replace(' ', 'T'));
+            return (a.ativa === 1 && dataExp > agora);
+        });
+
+        if (avisosAtivos.length === 0) {
+            return lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-inbox"></i> Nenhum comunicado ativo no momento.</p>'; 
+        }
+        
+        lista.innerHTML = avisosAtivos.map(a => {
+            const dataExp = new Date(a.tempo_expiracao.replace(' ', 'T'));
+
+            return `<li class="list-item" style="border-left: 4px solid var(--accent-color);">
+                <strong><i class="fa-solid fa-bullhorn"></i> ${a.titulo}</strong>
+                <p style="font-size:14px; margin-top:5px; color:var(--text-main);">${a.descricao}</p>
+                <div class="meta" style="margin-top:10px;"><i class="fa-regular fa-clock"></i> Expira: ${dataExp.toLocaleString('pt-BR')}</div>
+                <button onclick="cancelarNotificacao(${a.id})" class="btn-outline" style="border-color:var(--danger); color:var(--danger); margin-top: 10px;"><i class="fa-solid fa-trash-can"></i> Retirar do Ar</button>
+            </li>`;
+        }).join(''); 
+    } 
+}
+
 async function cancelarNotificacao(id) { if (await customConfirm('Cancelar este comunicado imediatamente?', 'Atenção')) { await fetch(`/api/admin/notificacao/${id}/cancelar`, { method: 'PUT' }); carregarNotificacoesAdmin(); } }
+
 
 document.getElementById('form-onibus')?.addEventListener('submit', async (e) => { e.preventDefault(); const payload = { placa: document.getElementById('onibus-placa').value, motorista: document.getElementById('onibus-motorista').value, rota: document.getElementById('onibus-rota').value, status: document.getElementById('onibus-status').value }; const res = await fetch('/api/admin/onibus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if (res.ok) { await customAlert(data.mensagem, "Registrado!"); document.getElementById('form-onibus').reset(); carregarFrota(); } else await customError(data.erro); });
 document.getElementById('form-editar-onibus')?.addEventListener('submit', async (e) => { e.preventDefault(); const id = document.getElementById('edit-oni-id').value; const payload = { placa: document.getElementById('edit-oni-placa').value, motorista: document.getElementById('edit-oni-motorista').value, rota: document.getElementById('edit-oni-rota').value, status: document.getElementById('edit-oni-status').value }; const res = await fetch(`/api/admin/onibus/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if (res.ok) { await customAlert(data.mensagem, "Atualizado!"); document.getElementById('box-edicao-onibus').classList.add('hidden'); carregarFrota(); } else await customError(data.erro); });
@@ -410,9 +484,7 @@ function prepararEdicaoOnibus(id, placa, motorista, rota, status) { document.get
 async function carregarFrota() { const res = await fetch('/api/admin/onibus'); if (res.ok) { const frota = await res.json(); const lista = document.getElementById('lista-frota'); if (frota.length === 0) return lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-inbox"></i> Frota vazia.</p>'; lista.innerHTML = frota.map(o => { let statIcon = o.status === 'Ativo' ? '<i class="fa-solid fa-circle-check text-success"></i>' : (o.status === 'Em Manutenção' ? '<i class="fa-solid fa-screwdriver-wrench text-accent"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'); return `<li class="list-item" style="${o.status === 'Inativo' ? 'border-left: 4px solid var(--danger); opacity: 0.6;' : (o.status === 'Em Manutenção' ? 'border-left: 4px solid var(--accent-color);' : 'border-left: 4px solid var(--success);')}"><strong><i class="fa-solid fa-bus text-primary"></i> Placa: ${o.placa}</strong><div class="meta"><i class="fa-solid fa-user-tie"></i> Motorista Titular: ${o.motorista}</div><div class="meta"><i class="fa-solid fa-route"></i> Rota Padrão: ${o.rota}</div><div class="meta" style="margin-top:5px; font-weight:600;">Status: &nbsp; ${statIcon} ${o.status}</div><button onclick="prepararEdicaoOnibus(${o.id}, '${o.placa}', '${o.motorista}', '${o.rota}', '${o.status}')" class="btn-outline" style="margin-top: 10px;"><i class="fa-solid fa-pen"></i> Editar Ficha</button></li>`}).join(''); } }
 
 
-// ----------------------------------------------------
-// GERENCIADOR DE ABAS PRINCIPAIS
-// ----------------------------------------------------
+// Gerenciador de Abas Principais
 async function showTab(tabId) {
     document.querySelectorAll('#aluno-view .tab').forEach(t => t.classList.add('hidden'));
     document.getElementById(`tab-${tabId}`).classList.remove('hidden');

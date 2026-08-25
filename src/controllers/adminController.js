@@ -75,8 +75,26 @@ exports.reativarAluno = (req, res) => {
 
 exports.adicionarNotificacao = (req, res) => {
     const { titulo, descricao, tempo_expiracao } = req.body;
-    db.run('INSERT INTO notificacoes (titulo, descricao, tempo_expiracao, autor_id) VALUES (?, ?, ?, (SELECT id FROM administradores WHERE usuario_id = ?))',
-        [titulo, descricao, tempo_expiracao, req.session.userId], (err) => {
+    
+    if (!titulo || !descricao) {
+        return res.status(400).json({ erro: 'Título e descrição são obrigatórios.' });
+    }
+
+    const query = `
+        INSERT INTO notificacoes (titulo, descricao, tempo_expiracao, autor_id) 
+        VALUES (?, ?, ?, (SELECT id FROM administradores WHERE usuario_id = ?))
+    `;
+
+    db.run(query, [titulo, descricao, tempo_expiracao, req.session.userId], function(err) {
+        if (err) {
+            console.error('Erro ao inserir notificação:', err.message);
+            return res.status(500).json({ erro: 'Erro ao enviar notificação.' });
+        }
+        
+        if (this.changes === 0) {
+            return res.status(400).json({ erro: 'Administrador não encontrado ou sessão inválida.' });
+        }
+
         res.json({ mensagem: 'Notificação enviada com sucesso!' });
     });
 };
