@@ -47,13 +47,24 @@ exports.buscarAlunos = (req, res) => {
 
 exports.editarAluno = (req, res) => {
     const { id_aluno } = req.params;
-    const { nome, email, matricula, instituicao_ensino } = req.body;
-    db.run(`UPDATE usuarios SET nome = ?, email = ? WHERE id = (SELECT usuario_id FROM alunos WHERE id = ?)`, 
-        [nome, email, id_aluno], (err) => {
-        if (err) return res.status(500).json({ erro: 'Erro ao atualizar dados.' });
+    // Recebe o novo CPF pelo corpo da requisição
+    const { nome, cpf, email, matricula, instituicao_ensino } = req.body;
+    
+    // Atualiza nome, e-mail e cpf do usuário
+    db.run(`UPDATE usuarios SET nome = ?, cpf = ?, email = ? WHERE id = (SELECT usuario_id FROM alunos WHERE id = ?)`, 
+        [nome, cpf, email, id_aluno], (err) => {
+        if (err) {
+            if (err.message.includes('UNIQUE')) return res.status(400).json({ erro: 'O CPF ou E-mail informado já está em uso por outro cadastro.' });
+            return res.status(500).json({ erro: 'Erro ao atualizar dados principais.' });
+        }
+        
+        // Atualiza os dados acadêmicos do aluno
         db.run(`UPDATE alunos SET matricula = ?, instituicao_ensino = ? WHERE id = ?`, 
             [matricula, instituicao_ensino, id_aluno], (err) => {
-            if (err) return res.status(500).json({ erro: 'Erro ao atualizar acadêmico.' });
+            if (err) {
+                if (err.message.includes('UNIQUE')) return res.status(400).json({ erro: 'A Matrícula informada já está cadastrada.' });
+                return res.status(500).json({ erro: 'Erro ao atualizar dados acadêmicos.' });
+            }
             res.json({ mensagem: 'Aluno atualizado com sucesso!' });
         });
     });
@@ -87,14 +98,11 @@ exports.adicionarNotificacao = (req, res) => {
 
     db.run(query, [titulo, descricao, tempo_expiracao, req.session.userId], function(err) {
         if (err) {
-            console.error('Erro ao inserir notificação:', err.message);
             return res.status(500).json({ erro: 'Erro ao enviar notificação.' });
         }
-        
         if (this.changes === 0) {
             return res.status(400).json({ erro: 'Administrador não encontrado ou sessão inválida.' });
         }
-
         res.json({ mensagem: 'Notificação enviada com sucesso!' });
     });
 };
@@ -188,7 +196,6 @@ exports.listarPresencasDoDia = (req, res) => {
     });
 };
 
-// --- NOVAS FUNÇÕES PARA DIAS SEM ÔNIBUS (FERIADOS) ---
 exports.listarExcecoes = (req, res) => {
     db.all('SELECT * FROM dias_sem_onibus', [], (err, rows) => {
         res.json(rows || []);

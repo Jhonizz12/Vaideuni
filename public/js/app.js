@@ -1,6 +1,6 @@
 // public/js/app.js
 
-// Sistema de Modal Customizado
+// Cria o modal customizado usando uma Promise, assim o código "espera" a resposta do usuário (OK ou Cancelar)
 function openModal(title, message, iconClass, iconColorClass, showCancel = false, isPrompt = false) {
     return new Promise((resolve) => {
         const overlay = document.getElementById('custom-modal');
@@ -45,13 +45,13 @@ function openModal(title, message, iconClass, iconColorClass, showCancel = false
     });
 }
 
+// Atalhos rápidos para chamar o modal sem precisar passar todos os parâmetros sempre
 const customAlert = (msg, title = "Aviso") => openModal(title, msg, "fa-solid fa-circle-info", "info", false, false);
 const customError = (msg, title = "Atenção") => openModal(title, msg, "fa-solid fa-circle-exclamation", "error", false, false);
 const customConfirm = (msg, title = "Confirmação") => openModal(title, msg, "fa-solid fa-circle-question", "warning", true, false);
 const customPrompt = (msg, title = "Entrada de Dados") => openModal(title, msg, "fa-solid fa-keyboard", "info", true, true);
 
-
-// Autenticação e Navegação Básica
+// Máscara dinâmica: formata o CPF com pontos e traço enquanto o usuário digita
 document.getElementById('cpf').addEventListener('input', function(e) {
     let v = e.target.value.replace(/\D/g, ''); 
     if (v.length > 11) v = v.substring(0, 11);
@@ -61,6 +61,17 @@ document.getElementById('cpf').addEventListener('input', function(e) {
     e.target.value = v;
 });
 
+// Reaproveitando a máscara de CPF para o campo de edição lá no painel do admin
+document.getElementById('edit-cpf')?.addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, ''); 
+    if (v.length > 11) v = v.substring(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2'); 
+    v = v.replace(/(\d{3})(\d)/, '$1.$2'); 
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2'); 
+    e.target.value = v;
+});
+
+// Alterna entre a tela de login e a de recuperar senha
 function toggleRecuperarSenha() {
     const loginForm = document.getElementById('login-form');
     const recForm = document.getElementById('recuperar-form');
@@ -71,6 +82,7 @@ function toggleRecuperarSenha() {
     }
 }
 
+// Bate na API para destruir a sessão atual e volta pra tela inicial
 async function fazerLogout() {
     if(await customConfirm("Deseja realmente sair do sistema?", "Encerrar Sessão")) {
         const res = await fetch('/api/logout', { method: 'POST' });
@@ -94,6 +106,7 @@ document.getElementById('recuperar-form').addEventListener('submit', async (e) =
     else await customError(data.erro);
 });
 
+// Dispara o login limpando os caracteres especiais do CPF antes de mandar pro banco
 document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -123,7 +136,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
 });
 
 
-// Painel do Aluno
 document.getElementById('presenca-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.querySelector('input[name="tipo"]:checked').value;
@@ -146,9 +158,9 @@ async function cancelarPresencaAPI() {
 }
 
 
-// Gerenciamento de Exceções / Feriados (Globais)
 let diasExcecao = [];
 
+// Busca os dias marcados como "sem ônibus" pra gente saber pintar de vermelho no calendário
 async function carregarExcecoesGlobais() {
     try {
         const res = await fetch('/api/calendario/excecoes');
@@ -180,10 +192,10 @@ async function removerFeriado() {
     }
 }
 
-// Engine do Calendário Visual - Aluno e Admin
 let dataRefAluno = new Date();
 let diaAtivoSemanaAluno = null;
 
+// Monta a grade visual do calendário do aluno inserindo div vazia para ajustar o dia da semana
 async function renderizarCalendarioVisualAluno() {
     await carregarExcecoesGlobais();
     const grid = document.getElementById('aluno-calendario-dias');
@@ -253,6 +265,7 @@ let dataRef = new Date();
 let diaAtivoISO = null;
 let diaAtivoSemana = null;
 
+// Monta a grade visual do calendário do Admin
 async function renderizarCalendarioVisual() {
     await carregarExcecoesGlobais();
     const grid = document.getElementById('calendario-dias');
@@ -350,6 +363,7 @@ async function removerEscala(id) {
     } 
 }
 
+// Bate na API pra pegar os alunos confirmados do dia e agrupa eles visualmente por ônibus
 async function carregarPresencasDaData(dataStr) {
     const res = await fetch(`/api/admin/presencas?data=${dataStr}`);
     if (res.ok) {
@@ -374,7 +388,6 @@ async function carregarPresencasDaData(dataStr) {
 }
 
 
-// Demais Ações do Admin (Alunos, Frota, Avisos)
 document.getElementById('form-cadastro-aluno').addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = { nome: document.getElementById('novo-nome').value, cpf: document.getElementById('novo-cpf').value, email: document.getElementById('novo-email').value, telefone: document.getElementById('novo-telefone').value, data_nascimento: document.getElementById('novo-nascimento').value, matricula: document.getElementById('novo-matricula').value, instituicao_ensino: document.getElementById('novo-instituicao').value };
@@ -389,6 +402,11 @@ async function buscarAlunosAPI() {
     if (res.ok) {
         const alunos = await res.json();
         const lista = document.getElementById('lista-gerenciamento-alunos');
+        
+        const boxEdicao = document.getElementById('box-edicao-aluno');
+        boxEdicao.classList.add('hidden');
+        document.getElementById('tab-gerenciar-alunos').appendChild(boxEdicao);
+
         if (alunos.length === 0) return lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-magnifying-glass"></i> Nenhum aluno encontrado.</p>';
         
         lista.innerHTML = alunos.map(a => {
@@ -399,13 +417,62 @@ async function buscarAlunosAPI() {
                 : 
                 `<button onclick="reativarAlunoAPI(${a.aluno_id})" style="background-color: #28a745 !important; border: none; border-radius: 8px; color: white !important; flex:1; padding: 10px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-user-check"></i> Reativar</button>`;
 
-            return `<li class="list-item" style="${isAtivo ? 'border-left: 4px solid var(--primary-color);' : 'border-left: 4px solid var(--text-light); opacity: 0.7; filter: grayscale(1);'}"><strong><i class="fa-solid fa-user"></i> ${a.nome}</strong><div class="meta"><i class="fa-solid fa-address-card"></i> CPF: ${a.cpf} &nbsp;|&nbsp; <i class="fa-solid fa-hashtag"></i> Matrícula: ${a.matricula}</div><div class="meta"><i class="fa-solid fa-phone"></i> Tel: ${a.telefone || 'N/A'}</div><div style="margin-top: 10px; display: flex; gap: 10px;"><button onclick="prepararEdicao(${a.aluno_id}, '${a.nome}', '${a.email}', '${a.matricula}', '${a.instituicao_ensino}')" class="btn-outline" style="flex:1;"><i class="fa-solid fa-pen"></i> Editar</button> ${btnAcao}</div></li>`;
+            return `<li class="list-item" style="${isAtivo ? 'border-left: 4px solid var(--primary-color);' : 'border-left: 4px solid var(--text-light); opacity: 0.7; filter: grayscale(1);'}"><strong><i class="fa-solid fa-user"></i> ${a.nome}</strong><div class="meta"><i class="fa-solid fa-address-card"></i> CPF: ${a.cpf} &nbsp;|&nbsp; <i class="fa-solid fa-hashtag"></i> Matrícula: ${a.matricula}</div><div class="meta"><i class="fa-solid fa-phone"></i> Tel: ${a.telefone || 'N/A'}</div><div style="margin-top: 10px; display: flex; gap: 10px;"><button onclick="prepararEdicao(this, ${a.aluno_id}, '${a.nome}', '${a.cpf}', '${a.email}', '${a.matricula}', '${a.instituicao_ensino}')" class="btn-outline" style="flex:1;"><i class="fa-solid fa-pen"></i> Editar</button> ${btnAcao}</div></li>`;
         }).join('');
     }
 }
 
-function prepararEdicao(id, nome, email, matricula, inst) { document.getElementById('edit-id').value = id; document.getElementById('edit-nome').value = nome; document.getElementById('edit-email').value = email; document.getElementById('edit-matricula').value = matricula; document.getElementById('edit-instituicao').value = inst; document.getElementById('box-edicao-aluno').classList.remove('hidden'); }
-document.getElementById('form-editar-aluno').addEventListener('submit', async (e) => { e.preventDefault(); const id = document.getElementById('edit-id').value; const payload = { nome: document.getElementById('edit-nome').value, email: document.getElementById('edit-email').value, matricula: document.getElementById('edit-matricula').value, instituicao_ensino: document.getElementById('edit-instituicao').value }; const res = await fetch(`/api/admin/aluno/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if(res.ok) { await customAlert(data.mensagem, "Sucesso!"); document.getElementById('box-edicao-aluno').classList.add('hidden'); buscarAlunosAPI(); } else await customError(data.erro); });
+// Injeta o formulário de edição exatamente abaixo do card do aluno que foi clicado
+function prepararEdicao(btn, id, nome, cpf, email, matricula, inst) { 
+    document.getElementById('edit-id').value = id; 
+    document.getElementById('edit-nome').value = nome; 
+    
+    let cpfFormatado = cpf.replace(/\D/g, '');
+    if (cpfFormatado.length === 11) {
+        cpfFormatado = cpfFormatado.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    
+    document.getElementById('edit-cpf').value = cpfFormatado;
+    document.getElementById('edit-email').value = email; 
+    document.getElementById('edit-matricula').value = matricula; 
+    document.getElementById('edit-instituicao').value = inst; 
+    
+    const boxEdicao = document.getElementById('box-edicao-aluno');
+    const listItem = btn.closest('.list-item');
+    
+    boxEdicao.style.marginTop = '15px';
+    listItem.appendChild(boxEdicao);
+    boxEdicao.classList.remove('hidden'); 
+    
+    setTimeout(() => {
+        boxEdicao.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
+
+document.getElementById('form-editar-aluno').addEventListener('submit', async (e) => { 
+    e.preventDefault(); 
+    const id = document.getElementById('edit-id').value; 
+    const cpfLimpo = document.getElementById('edit-cpf').value.replace(/\D/g, '');
+    
+    const payload = { 
+        nome: document.getElementById('edit-nome').value, 
+        cpf: cpfLimpo,
+        email: document.getElementById('edit-email').value, 
+        matricula: document.getElementById('edit-matricula').value, 
+        instituicao_ensino: document.getElementById('edit-instituicao').value 
+    }; 
+    
+    const res = await fetch(`/api/admin/aluno/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
+    const data = await res.json(); 
+    if(res.ok) { 
+        await customAlert(data.mensagem, "Sucesso!"); 
+        document.getElementById('box-edicao-aluno').classList.add('hidden'); 
+        buscarAlunosAPI(); 
+    } else {
+        await customError(data.erro); 
+    }
+});
+
 async function excluirAlunoAPI(id) { if(await customConfirm('Inativar o acesso deste aluno ao app?', 'Atenção')) { await fetch(`/api/admin/aluno/${id}`, { method: 'DELETE' }); buscarAlunosAPI(); } }
 async function reativarAlunoAPI(id) { if(await customConfirm('Restaurar o acesso deste aluno?', 'Atenção')) { await fetch(`/api/admin/aluno/${id}/reativar`, { method: 'PUT' }); buscarAlunosAPI(); } }
 
@@ -445,6 +512,7 @@ document.getElementById('form-notificacao').addEventListener('submit', async (e)
 });
 
 
+// Lista avisos no painel Admin filtrando apenas os ativos e com data válida
 async function carregarNotificacoesAdmin() { 
     const res = await fetch('/api/admin/notificacoes'); 
     if (res.ok) { 
@@ -452,7 +520,6 @@ async function carregarNotificacoesAdmin() {
         const lista = document.getElementById('lista-avisos-admin'); 
         const agora = new Date(); 
         
-        // Filtra para manter na tela APENAS os avisos que estão ativos e dentro do prazo
         const avisosAtivos = avisos.filter(a => {
             const dataExp = new Date(a.tempo_expiracao.replace(' ', 'T'));
             return (a.ativa === 1 && dataExp > agora);
@@ -480,11 +547,46 @@ async function cancelarNotificacao(id) { if (await customConfirm('Cancelar este 
 
 document.getElementById('form-onibus')?.addEventListener('submit', async (e) => { e.preventDefault(); const payload = { placa: document.getElementById('onibus-placa').value, motorista: document.getElementById('onibus-motorista').value, rota: document.getElementById('onibus-rota').value, status: document.getElementById('onibus-status').value }; const res = await fetch('/api/admin/onibus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if (res.ok) { await customAlert(data.mensagem, "Registrado!"); document.getElementById('form-onibus').reset(); carregarFrota(); } else await customError(data.erro); });
 document.getElementById('form-editar-onibus')?.addEventListener('submit', async (e) => { e.preventDefault(); const id = document.getElementById('edit-oni-id').value; const payload = { placa: document.getElementById('edit-oni-placa').value, motorista: document.getElementById('edit-oni-motorista').value, rota: document.getElementById('edit-oni-rota').value, status: document.getElementById('edit-oni-status').value }; const res = await fetch(`/api/admin/onibus/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); const data = await res.json(); if (res.ok) { await customAlert(data.mensagem, "Atualizado!"); document.getElementById('box-edicao-onibus').classList.add('hidden'); carregarFrota(); } else await customError(data.erro); });
-function prepararEdicaoOnibus(id, placa, motorista, rota, status) { document.getElementById('edit-oni-id').value = id; document.getElementById('edit-oni-placa').value = placa; document.getElementById('edit-oni-motorista').value = motorista; document.getElementById('edit-oni-rota').value = rota; document.getElementById('edit-oni-status').value = status; document.getElementById('box-edicao-onibus').classList.remove('hidden'); }
-async function carregarFrota() { const res = await fetch('/api/admin/onibus'); if (res.ok) { const frota = await res.json(); const lista = document.getElementById('lista-frota'); if (frota.length === 0) return lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-inbox"></i> Frota vazia.</p>'; lista.innerHTML = frota.map(o => { let statIcon = o.status === 'Ativo' ? '<i class="fa-solid fa-circle-check text-success"></i>' : (o.status === 'Em Manutenção' ? '<i class="fa-solid fa-screwdriver-wrench text-accent"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'); return `<li class="list-item" style="${o.status === 'Inativo' ? 'border-left: 4px solid var(--danger); opacity: 0.6;' : (o.status === 'Em Manutenção' ? 'border-left: 4px solid var(--accent-color);' : 'border-left: 4px solid var(--success);')}"><strong><i class="fa-solid fa-bus text-primary"></i> Placa: ${o.placa}</strong><div class="meta"><i class="fa-solid fa-user-tie"></i> Motorista Titular: ${o.motorista}</div><div class="meta"><i class="fa-solid fa-route"></i> Rota Padrão: ${o.rota}</div><div class="meta" style="margin-top:5px; font-weight:600;">Status: &nbsp; ${statIcon} ${o.status}</div><button onclick="prepararEdicaoOnibus(${o.id}, '${o.placa}', '${o.motorista}', '${o.rota}', '${o.status}')" class="btn-outline" style="margin-top: 10px;"><i class="fa-solid fa-pen"></i> Editar Ficha</button></li>`}).join(''); } }
 
+// Anexa o bloco de edição do ônibus direto abaixo do item clicado na lista
+function prepararEdicaoOnibus(btn, id, placa, motorista, rota, status) { 
+    document.getElementById('edit-oni-id').value = id; 
+    document.getElementById('edit-oni-placa').value = placa; 
+    document.getElementById('edit-oni-motorista').value = motorista; 
+    document.getElementById('edit-oni-rota').value = rota; 
+    document.getElementById('edit-oni-status').value = status; 
+    
+    const boxEdicao = document.getElementById('box-edicao-onibus');
+    const listItem = btn.closest('.list-item');
+    
+    boxEdicao.style.marginTop = '15px';
+    listItem.appendChild(boxEdicao);
+    boxEdicao.classList.remove('hidden'); 
+    
+    setTimeout(() => {
+        boxEdicao.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+}
 
-// Gerenciador de Abas Principais
+async function carregarFrota() { 
+    const res = await fetch('/api/admin/onibus'); 
+    if (res.ok) { 
+        const frota = await res.json(); 
+        const lista = document.getElementById('lista-frota'); 
+        
+        const boxEdicao = document.getElementById('box-edicao-onibus');
+        boxEdicao.classList.add('hidden');
+        document.getElementById('tab-frota').appendChild(boxEdicao);
+
+        if (frota.length === 0) return lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-inbox"></i> Frota vazia.</p>'; 
+        lista.innerHTML = frota.map(o => { 
+            let statIcon = o.status === 'Ativo' ? '<i class="fa-solid fa-circle-check text-success"></i>' : (o.status === 'Em Manutenção' ? '<i class="fa-solid fa-screwdriver-wrench text-accent"></i>' : '<i class="fa-solid fa-circle-xmark text-danger"></i>'); 
+            return `<li class="list-item" style="${o.status === 'Inativo' ? 'border-left: 4px solid var(--danger); opacity: 0.6;' : (o.status === 'Em Manutenção' ? 'border-left: 4px solid var(--accent-color);' : 'border-left: 4px solid var(--success);')}"><strong><i class="fa-solid fa-bus text-primary"></i> Placa: ${o.placa}</strong><div class="meta"><i class="fa-solid fa-user-tie"></i> Motorista Titular: ${o.motorista}</div><div class="meta"><i class="fa-solid fa-route"></i> Rota Padrão: ${o.rota}</div><div class="meta" style="margin-top:5px; font-weight:600;">Status: &nbsp; ${statIcon} ${o.status}</div><button onclick="prepararEdicaoOnibus(this, ${o.id}, '${o.placa}', '${o.motorista}', '${o.rota}', '${o.status}')" class="btn-outline" style="margin-top: 10px;"><i class="fa-solid fa-pen"></i> Editar Ficha</button></li>`
+        }).join(''); 
+    } 
+}
+
+// Oculta as outras abas e exibe apenas a solicitada, carregando dados caso necessário
 async function showTab(tabId) {
     document.querySelectorAll('#aluno-view .tab').forEach(t => t.classList.add('hidden'));
     document.getElementById(`tab-${tabId}`).classList.remove('hidden');

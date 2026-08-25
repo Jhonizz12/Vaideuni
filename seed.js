@@ -27,10 +27,11 @@ async function rodarSeed() {
 
             // 2. Gera o hash da senha padrão (123456)
             const senhaHash = await bcrypt.hash('123456', 10);
+            const senhaAdmin = await bcrypt.hash('Adm@vs', 10);
 
             // 3. Injeta o Administrador de Teste
             db.run(`INSERT INTO usuarios (nome, cpf, email, senha, data_nascimento, tipo) 
-                    VALUES ('Admin Silva', '00000000000', 'admin@varresai.rj.gov.br', ?, '1980-05-10', 'ADMIN')`, [senhaHash], function(err) {
+                    VALUES ('Admin Silva', '00000000000', 'admin@varresai.rj.gov.br', ?, '1980-05-10', 'ADMIN')`, [senhaAdmin], function(err) {
                 if (!err) {
                     db.run(`INSERT INTO administradores (usuario_id, endereco) VALUES (?, 'Centro, Varre-Sai')`, [this.lastID]);
                     console.log('✅ Administrador de teste criado (CPF: 00000000000).');
