@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./database.sqlite');
 
+// Cadastra um novo aluno no sistema. 
+// Executa insercoes em cascata nas tabelas 'usuarios', 'alunos' e 'carteirinhas_virtuais'.
 exports.cadastrarAluno = async (req, res) => {
     const { nome, cpf, email, telefone, data_nascimento, matricula, instituicao_ensino } = req.body;
     try {
@@ -31,6 +33,8 @@ exports.cadastrarAluno = async (req, res) => {
     } catch (error) { res.status(500).json({ erro: 'Erro interno.' }); }
 };
 
+// Realiza a busca de alunos filtrando por nome ou CPF. 
+// Retorna dados combinados das tabelas de usuarios e alunos utilizando JOIN.
 exports.buscarAlunos = (req, res) => {
     const termo = req.query.q || '';
     const query = `
@@ -45,12 +49,12 @@ exports.buscarAlunos = (req, res) => {
     });
 };
 
+// Atualiza os dados cadastrais de um aluno especifico.
+// Modifica simultaneamente as informacoes base na tabela de usuarios e os dados academicos na tabela de alunos.
 exports.editarAluno = (req, res) => {
     const { id_aluno } = req.params;
-    // Recebe o novo CPF pelo corpo da requisição
     const { nome, cpf, email, matricula, instituicao_ensino } = req.body;
     
-    // Atualiza nome, e-mail e cpf do usuário
     db.run(`UPDATE usuarios SET nome = ?, cpf = ?, email = ? WHERE id = (SELECT usuario_id FROM alunos WHERE id = ?)`, 
         [nome, cpf, email, id_aluno], (err) => {
         if (err) {
@@ -58,7 +62,6 @@ exports.editarAluno = (req, res) => {
             return res.status(500).json({ erro: 'Erro ao atualizar dados principais.' });
         }
         
-        // Atualiza os dados acadêmicos do aluno
         db.run(`UPDATE alunos SET matricula = ?, instituicao_ensino = ? WHERE id = ?`, 
             [matricula, instituicao_ensino, id_aluno], (err) => {
             if (err) {
@@ -70,6 +73,7 @@ exports.editarAluno = (req, res) => {
     });
 };
 
+// Realiza a exclusao logica (soft delete) do aluno, alterando a flag de atividade para false (0).
 exports.excluirAluno = (req, res) => {
     const { id_aluno } = req.params;
     db.run('UPDATE usuarios SET ativo = 0 WHERE id = (SELECT usuario_id FROM alunos WHERE id = ?)', [id_aluno], (err) => {
@@ -77,6 +81,7 @@ exports.excluirAluno = (req, res) => {
     });
 };
 
+// Restaura o acesso de um aluno previamente inativado no sistema.
 exports.reativarAluno = (req, res) => {
     const { id_aluno } = req.params;
     db.run('UPDATE usuarios SET ativo = 1 WHERE id = (SELECT usuario_id FROM alunos WHERE id = ?)', [id_aluno], (err) => {
@@ -84,6 +89,8 @@ exports.reativarAluno = (req, res) => {
     });
 };
 
+// Cria um novo comunicado no sistema.
+// O comunicado e vinculado ao ID do administrador logado responsavel pelo envio.
 exports.adicionarNotificacao = (req, res) => {
     const { titulo, descricao, tempo_expiracao } = req.body;
     
@@ -107,12 +114,14 @@ exports.adicionarNotificacao = (req, res) => {
     });
 };
 
+// Retorna a lista completa de comunicados ordenados pela data de criacao em ordem decrescente.
 exports.listarNotificacoesAdmin = (req, res) => {
     db.all('SELECT * FROM notificacoes ORDER BY data_envio DESC', [], (err, rows) => {
         res.json(rows);
     });
 };
 
+// Forca o cancelamento de um aviso ativo, inativando a flag e redefinindo a data de expiracao para o momento atual.
 exports.cancelarNotificacao = (req, res) => {
     const { id } = req.params;
     db.run("UPDATE notificacoes SET ativa = 0, tempo_expiracao = datetime('now', 'localtime') WHERE id = ?", [id], (err) => {
@@ -120,6 +129,7 @@ exports.cancelarNotificacao = (req, res) => {
     });
 };
 
+// Consulta a escala fixa da frota para um dia especifico da semana, incluindo informacoes do veiculo e motorista associado.
 exports.buscarCalendarioDia = (req, res) => {
     const { dia } = req.params;
     const query = `
@@ -133,6 +143,7 @@ exports.buscarCalendarioDia = (req, res) => {
     });
 };
 
+// Insere a programacao de um onibus especifico na rotina de um dia da semana.
 exports.adicionarCalendario = (req, res) => {
     const { dia_semana, horario_saida, horario_volta, onibus_id, observacao } = req.body;
     db.run(`INSERT INTO dias_calendario (dia_semana, horario_saida, horario_volta, onibus_id, observacao) VALUES (?, ?, ?, ?, ?)`,
@@ -142,6 +153,7 @@ exports.adicionarCalendario = (req, res) => {
         });
 };
 
+// Remove a alocacao de um veiculo da programacao semanal.
 exports.removerCalendario = (req, res) => {
     const { id } = req.params;
     db.run(`DELETE FROM dias_calendario WHERE id = ?`, [id], (err) => {
@@ -149,6 +161,7 @@ exports.removerCalendario = (req, res) => {
     });
 };
 
+// Cadastra os dados de um novo veiculo na frota operacional.
 exports.cadastrarOnibus = (req, res) => {
     const { placa, motorista, rota, status } = req.body;
     db.run(`INSERT INTO onibus (placa, motorista, rota, status) VALUES (?, ?, ?, ?)`, 
@@ -157,12 +170,14 @@ exports.cadastrarOnibus = (req, res) => {
     });
 };
 
+// Retorna todos os onibus cadastrados no sistema.
 exports.listarOnibus = (req, res) => {
     db.all('SELECT * FROM onibus', [], (err, rows) => {
         res.json(rows);
     });
 };
 
+// Atualiza as informacoes descritivas e fisicas de um veiculo existente.
 exports.editarOnibus = (req, res) => {
     const { id } = req.params;
     const { placa, motorista, rota, status } = req.body;
@@ -172,6 +187,7 @@ exports.editarOnibus = (req, res) => {
     });
 };
 
+// Modifica apenas a situacao operacional de um veiculo.
 exports.atualizarStatusOnibus = (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -180,6 +196,8 @@ exports.atualizarStatusOnibus = (req, res) => {
     });
 };
 
+// Consolida os dados de embarque de uma data especifica.
+// Relaciona confirmacoes, alunos, usuarios e veiculos para gerar a lista de passageiros do dia.
 exports.listarPresencasDoDia = (req, res) => {
     const dataAlvo = req.query.data || new Date().toISOString().split('T')[0];
     const query = `
@@ -196,12 +214,14 @@ exports.listarPresencasDoDia = (req, res) => {
     });
 };
 
+// Retorna todas as datas que foram assinaladas pela gestao como dias sem atividade da frota.
 exports.listarExcecoes = (req, res) => {
     db.all('SELECT * FROM dias_sem_onibus', [], (err, rows) => {
         res.json(rows || []);
     });
 };
 
+// Registra uma nova suspensao de operacao para uma data pontual, detalhando o motivo.
 exports.adicionarExcecao = (req, res) => {
     const { data_exata, motivo } = req.body;
     db.run('INSERT OR REPLACE INTO dias_sem_onibus (data_exata, motivo) VALUES (?, ?)', [data_exata, motivo], (err) => {
@@ -210,6 +230,7 @@ exports.adicionarExcecao = (req, res) => {
     });
 };
 
+// Remove uma data da tabela de excecoes, restaurando o funcionamento da frota para aquele dia.
 exports.removerExcecao = (req, res) => {
     const { data } = req.params;
     db.run('DELETE FROM dias_sem_onibus WHERE data_exata = ?', [data], (err) => {
