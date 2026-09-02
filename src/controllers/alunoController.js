@@ -28,7 +28,7 @@ exports.confirmarPresenca = (req, res) => {
         if (feriado) return res.status(403).json({ erro: `Presença bloqueada. Não haverá ônibus hoje: ${feriado.motivo}` });
 
         const horaAtual = new Date().getHours();
-        if (horaAtual < 6 || horaAtual >= 23) {
+        if (horaAtual < 6 || horaAtual >= 15) {
             return res.status(403).json({ erro: 'Prazo encerrado. Confirmações apenas entre 06h e 15h.' });
         }
 
@@ -52,7 +52,7 @@ exports.confirmarPresenca = (req, res) => {
 // Respeita a mesma janela de horario de operacao (06h as 15h) permitida para as confirmacoes.
 exports.cancelarPresenca = (req, res) => {
     const horaAtual = new Date().getHours();
-    if (horaAtual < 6 || horaAtual >= 23) {
+    if (horaAtual < 6 || horaAtual >= 15) {
         return res.status(403).json({ erro: 'Prazo encerrado. Cancelamentos apenas entre 06h e 15h.' });
     }
 
@@ -64,10 +64,23 @@ exports.cancelarPresenca = (req, res) => {
     });
 };
 
-// Retorna exclusivamente os veiculos da frota cujo status atual e 'Ativo'.
-// Disponibiliza as informacoes para construcao do relacional no formulario de presenca do aluno.
+// Retorna exclusivamente os veiculos da frota cujo status e 'Ativo'
+// E que possuem rota agendada na escala fixa para o dia da semana corrente.
 exports.listarOnibusAtivos = (req, res) => {
-    db.all("SELECT id, placa, rota, motorista FROM onibus WHERE status = 'Ativo'", [], (err, rows) => {
+    const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    
+    // Garante que o dia da semana seja calculado com base no fuso horario do Brasil
+    const dataAtual = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+    const diaHoje = diasSemana[dataAtual.getDay()];
+
+    const query = `
+        SELECT DISTINCT o.id, o.placa, o.rota, o.motorista 
+        FROM onibus o
+        JOIN dias_calendario d ON o.id = d.onibus_id
+        WHERE o.status = 'Ativo' AND d.dia_semana = ?
+    `;
+
+    db.all(query, [diaHoje], (err, rows) => {
         if (err) return res.status(500).json({ erro: 'Erro ao buscar opções de ônibus.' });
         res.json(rows);
     });

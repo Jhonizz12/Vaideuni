@@ -660,13 +660,13 @@ async function showTab(tabId) {
                 if (res.ok) {
                     const onibusList = await res.json();
                     if (onibusList.length === 0) {
-                        select.innerHTML = '<option value="" disabled selected>Nenhum ônibus ativo na frota.</option>';
+                        select.innerHTML = '<option value="" disabled selected>Nenhum ônibus escalado para hoje.</option>';
                     } else {
                         select.innerHTML = '<option value="" disabled selected>Selecione o veículo na lista...</option>' + 
                             onibusList.map(o => `<option value="${o.id}">${o.motorista} | ${o.placa} | ${o.rota}</option>`).join('');
                     }
                 } else {
-                    select.innerHTML = '<option value="" disabled selected>⚠️ Falha ao carregar ônibus.</option>';
+                    select.innerHTML = '<option value="" disabled selected>Falha ao carregar ônibus.</option>';
                 }
             }
         } catch(e) { console.error("Erro na aba de presença:", e); }
@@ -681,7 +681,7 @@ async function showTab(tabId) {
         const res = await fetch('/api/aluno/notificacoes', { cache: 'no-store' });
         if (res.ok) {
             const avisos = await res.json(); const lista = document.getElementById('lista-avisos');
-            if (avisos.length === 0) lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-inbox"></i> Nenhum comunicado da Secretaria de Educação.</p>';
+            if (avisos.length === 0) lista.innerHTML = '<p class="text-light" style="text-align:center;"><i class="fa-solid fa-inbox"></i> Nenhuma notificação da prefeitura.</p>';
             else lista.innerHTML = avisos.map(a => `<li class="list-item" style="border-left: 4px solid var(--accent-color);"><strong><i class="fa-solid fa-circle-exclamation text-accent"></i> ${a.titulo}</strong><p style="margin-top:5px; font-size:14px;">${a.descricao}</p><div class="meta" style="margin-top:10px;"><i class="fa-regular fa-clock"></i> Expira em: ${new Date(a.tempo_expiracao).toLocaleString('pt-BR')}</div></li>`).join('');
         }
     }
